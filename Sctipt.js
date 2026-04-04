@@ -140,20 +140,18 @@ function initCursorGlow() {
 
 // ─── FLASH CURSOR TRAIL (RAIO DO FLASH) ──────────────────────
 function initFlashTrail() {
-  if (window.matchMedia('(pointer: coarse)').matches) return;
-
   let lastTime = 0;
 
-  window.addEventListener('mousemove', (e) => {
+  function createFlashParticle(x, y) {
     const now = Date.now();
-    // Limita um pouco a quantidade de partículas (opcional)
-    if (now - lastTime < 15) return; 
+    // Limita a criação de partículas para não travar o celular/pc (30ms = boa performance)
+    if (now - lastTime < 30) return; 
     lastTime = now;
 
     const trail = document.createElement('div');
     trail.className = 'flash-trail';
-    trail.style.left = e.clientX + 'px';
-    trail.style.top = e.clientY + 'px';
+    trail.style.left = x + 'px';
+    trail.style.top = y + 'px';
     
     // Rotação randômica para parecerem faíscas/raios
     const rotation = Math.random() * 360;
@@ -165,6 +163,18 @@ function initFlashTrail() {
     setTimeout(() => {
       trail.remove();
     }, 400);
+  }
+
+  // Para quem tem Mouse no Desktop
+  window.addEventListener('mousemove', (e) => {
+    createFlashParticle(e.clientX, e.clientY);
+  }, { passive: true });
+
+  // Para quando arrastar o dedo e scrollar no Celular
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) {
+      createFlashParticle(e.touches[0].clientX, e.touches[0].clientY);
+    }
   }, { passive: true });
 }
 
