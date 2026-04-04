@@ -5,39 +5,7 @@
 
 'use strict';
 
-// ─── TYPED TEXT EFFECT ───────────────────────────────────────
-const typedWords = ['Fullstack', 'Front-End', 'Back-End', 'Python Dev', 'Java Dev'];
-let wordIndex = 0;
-let charIndex = 0;
-let isDeleting = false;
-
-function typedEffect() {
-  const el = document.getElementById('typed-text');
-  if (!el) return;
-
-  const currentWord = typedWords[wordIndex];
-
-  if (isDeleting) {
-    charIndex--;
-    el.textContent = currentWord.slice(0, charIndex);
-  } else {
-    charIndex++;
-    el.textContent = currentWord.slice(0, charIndex);
-  }
-
-  let speed = isDeleting ? 80 : 120;
-
-  if (!isDeleting && charIndex === currentWord.length) {
-    speed = 1800;
-    isDeleting = true;
-  } else if (isDeleting && charIndex === 0) {
-    isDeleting = false;
-    wordIndex = (wordIndex + 1) % typedWords.length;
-    speed = 300;
-  }
-
-  setTimeout(typedEffect, speed);
-}
+// Animacoes Extras
 
 // ─── NAVBAR SCROLL EFFECT ────────────────────────────────────
 function initNavbar() {
@@ -295,7 +263,6 @@ function initSkillHover() {
 
 // ─── INIT ALL ────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  typedEffect();
   initNavbar();
   initActiveNavLinks();
   initHamburger();
