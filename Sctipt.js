@@ -106,44 +106,100 @@ function initCursorGlow() {
   animateGlow();
 }
 
-// ─── FLASH CURSOR TRAIL (RAIO DO FLASH) ──────────────────────
+// ─── FLASH CURSOR TRAIL (LIGHTNING CANVAS) ─────────────────
 function initFlashTrail() {
-  let lastTime = 0;
+  const canvas = document.getElementById('lightning-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
 
-  function createFlashParticle(x, y) {
-    const now = Date.now();
-    // Limita a criação de partículas para não travar o celular/pc (30ms = boa performance)
-    if (now - lastTime < 30) return; 
-    lastTime = now;
+  let width = canvas.width = window.innerWidth;
+  let height = canvas.height = window.innerHeight;
 
-    const trail = document.createElement('div');
-    trail.className = 'flash-trail';
-    trail.style.left = x + 'px';
-    trail.style.top = y + 'px';
-    
-    // Rotação randômica para parecerem faíscas/raios
-    const rotation = Math.random() * 360;
-    trail.style.setProperty('--rot', `${rotation}deg`);
+  window.addEventListener('resize', () => {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  });
 
-    document.body.appendChild(trail);
+  const path = [];
 
-    // Remove do DOM após a animação de fade
-    setTimeout(() => {
-      trail.remove();
-    }, 400);
+  function addPoint(x, y) {
+    path.push({ x, y, age: 0 });
   }
 
-  // Para quem tem Mouse no Desktop
-  window.addEventListener('mousemove', (e) => {
-    createFlashParticle(e.clientX, e.clientY);
+  window.addEventListener('mousemove', (e) => addPoint(e.clientX, e.clientY), { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) addPoint(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: true });
 
-  // Para quando arrastar o dedo e scrollar no Celular
-  window.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0) {
-      createFlashParticle(e.touches[0].clientX, e.touches[0].clientY);
+  // Desenha os sub-ramos tremidos do raio
+  function drawLightning(p1, p2) {
+    const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    const steps = Math.max(Math.floor(dist / 10), 1);
+    
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+
+    for (let i = 1; i <= steps; i++) {
+        let t = i / steps;
+        let pX = p1.x + (p2.x - p1.x) * t;
+        let pY = p1.y + (p2.y - p1.y) * t;
+        
+        let noiseOffset = (Math.random() - 0.5) * 15; // Ruído que cria as quinas do raio
+        
+        ctx.lineTo(pX + noiseOffset, pY + noiseOffset);
     }
-  }, { passive: true });
+    ctx.stroke();
+  }
+
+  function renderLoop() {
+    ctx.clearRect(0, 0, width, height);
+
+    if (path.length > 1) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      
+      for (let i = 0; i < path.length - 1; i++) {
+        let p1 = path[i];
+        let p2 = path[i + 1];
+
+        if (p1.age > 15) continue; // Desaparece tão rápido quanto um relâmpago curucu
+
+        let alpha = 1 - (p1.age / 15);
+        
+        // Relâmpago Principal (Miolo super branco + Glow amarelo agressivo)
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "#ffcc00"; 
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = Math.random() * 2 + 1.5; // Espessura tremelica da eletricidade
+        
+        drawLightning(p1, p2);
+
+        // Faíscas laterais menores para preencher o visual do raio vibrando
+        if (Math.random() < 0.3) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#b30000"; // Leve tom do traje
+            ctx.strokeStyle = `rgba(255, 204, 0, ${alpha * 0.8})`; // Eletricidade Amarela
+            ctx.lineWidth = 1;
+            drawLightning(p1, {
+              x: p2.x + (Math.random() - 0.5) * 35,
+              y: p2.y + (Math.random() - 0.5) * 35
+            });
+        }
+      }
+    }
+
+    // Envelhece e mata os vetores do raio na tela
+    for (let i = 0; i < path.length; i++) {
+      path[i].age++;
+    }
+    while(path.length && path[0].age > 15) {
+      path.shift();
+    }
+
+    requestAnimationFrame(renderLoop);
+  }
+
+  renderLoop();
 }
 
 // ─── SCROLL REVEAL ───────────────────────────────────────────
